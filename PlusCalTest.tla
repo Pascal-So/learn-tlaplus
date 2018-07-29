@@ -2,29 +2,40 @@
 
 EXTENDS Integers
 
+(***************************************************************************)
+(* The algorithm implemented here doesn't do much and is loosely based on  *)
+(* the condition variable example in cppreference:                         *)
+(* https://en.cppreference.com/w/cpp/thread/condition_variable             *)
+(***************************************************************************)
+
 (* --fair algorithm mutexes
-variables lock = 0, notified = FALSE, ready = FALSE, processed = FALSE;
+variables \* used for mutex and cv
+          lock = 0, notified = FALSE,
+          \* used by algorithm
+          ready = FALSE, processed = FALSE;
+
+
+(***************************************************************************)
+(*  These macros are a basic implementation of mutex and cv functionality  *)
+(*  in PlusCal. 'raii' here means that the macro can be used in a single   *)
+(*  action and can be thought of as auto releasing the lock at the end.    *)
+(***************************************************************************)
 
 macro mutex_lock() begin await lock = 0; lock := 1; end macro
-
 macro mutex_unlock() begin lock := 0; end macro
-
 macro mutex_raii() begin await lock = 0; end macro
-
 macro cv_wait_lock(condition)
 begin
     await condition /\ notified;
     notified := FALSE;
     mutex_lock();
 end macro
-
 macro cv_wait_raii(condition)
 begin
     await condition /\ notified;
     notified := FALSE;
     mutex_raii();
 end macro
-
 macro cv_notify() begin notified := TRUE; end macro
 
 
@@ -157,11 +168,11 @@ Safety == /\ (\A i \in ProcSet, j \in ProcSet : i # j => ~(pc[i] = "cs" /\ pc[j]
           /\ processed => ready
           /\ notified => (lock # 1)  
           
-Processed == /\Termination 
-             /\ <>[]processed
-             /\ (ready ~> processed)
+Liveness == /\Termination 
+            /\ <>[]processed
+            /\ (ready ~> processed)
 
 =============================================================================
 \* Modification History
-\* Last modified Sun Jul 29 16:34:09 CEST 2018 by pascal
+\* Last modified Mon Jul 30 00:52:03 CEST 2018 by pascal
 \* Created Sat Jul 28 12:31:06 CEST 2018 by pascal
